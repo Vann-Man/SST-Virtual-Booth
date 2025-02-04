@@ -6,8 +6,7 @@ import numpy as np
 p = "shape_predictor_68_face_landmarks.dat"
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor(p)
-heart_sunglasses = cv2.imread("heart2.png", cv2.IMREAD_UNCHANGED)
-heart3 = cv2.imread("heart3.png", cv2.IMREAD_UNCHANGED)
+heart_sunglasses = cv2.imread("heart3.png", cv2.IMREAD_UNCHANGED)
 
 KNOWN_EYE_DISTANCE = 6.3  # In cm (average adult eye distance)
 KNOWN_PIXEL_DISTANCE = 120  # Measured eye distance in pixels at a known distance
@@ -66,10 +65,10 @@ while True:
 
             # Calculate size of the sunglasses dynamically based on eye distance
             sun_width = int(eye_distance_pixels * 2.2)  # Scale width dynamically
-            sun_height = int(heart3.shape[0] * (sun_width / heart3.shape[1]))
+            sun_height = int(heart_sunglasses.shape[0] * (sun_width / heart_sunglasses.shape[1]))
 
             # Resize sunglasses
-            resized_sunglasses = cv2.resize(heart3, (sun_width, sun_height), interpolation=cv2.INTER_AREA)
+            resized_sunglasses = cv2.resize(heart_sunglasses, (sun_width, sun_height), interpolation=cv2.INTER_AREA)
 
             # Calculate rotation angle
             angle = np.degrees(np.arctan2(right_eye[1] - left_eye[1], right_eye[0] - left_eye[0]))
