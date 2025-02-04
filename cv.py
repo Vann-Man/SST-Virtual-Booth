@@ -6,7 +6,7 @@ import numpy as np
 p = "shape_predictor_68_face_landmarks.dat"
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor(p)
-heart_sunglasses = cv2.imread("heart3.png", cv2.IMREAD_UNCHANGED)
+heart_sunglasses = cv2.imread("heart_sunglasses.png", cv2.IMREAD_UNCHANGED)
 
 KNOWN_EYE_DISTANCE = 6.3  # In cm (average adult eye distance)
 KNOWN_PIXEL_DISTANCE = 120  # Measured eye distance in pixels at a known distance
