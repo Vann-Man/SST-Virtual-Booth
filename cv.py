@@ -11,6 +11,7 @@ predictor = dlib.shape_predictor(p)
 
 # declare props
 heart_sunglasses = cv2.imread("heart_sunglasses.png", cv2.IMREAD_UNCHANGED) # heart sunglasses prop
+hat = cv2.imread("hat1.png", cv2.IMREAD_UNCHANGED) # hat prop
 
 # some data from online (chatgpt)
 KNOWN_EYE_DISTANCE = 6.3  # average adult eye distance in cm
@@ -20,32 +21,50 @@ KNOWN_REAL_DISTANCE = 50  # cm distance from camera to face
 # start video capture
 cap = cv2.VideoCapture(1)
 
-# filter active flag
-filter_active = False
+# declare variables
+filter_active = False # filter active flag
+program_run = True # program run flag
 
 # menu function
 def menu():
     global filter_active
+    global program_run
+    global selection
+    global prop_list
+
     while True:
         print("\nMenu:")
         print("1. Activate Filter")
         print("2. Deactivate Filter")
         print("3. Exit")
+        print("4. Select filter")
         choice = input("Enter choice: ")
         
         # input validation/choices
         if choice == "1":
-            filter_active = True
-            print("Filter activated.")
+            if selection == []:
+                print("No prop selected.")
+            else:
+                filter_active = True
+                print("Filter activated.")
         elif choice == "2":
             filter_active = False
             print("Filter deactivated.")
         elif choice == "3":
             print("Exiting...")
-            # end program
-            cap.release()
-            cv2.destroyAllWindows()
+            program_run = False
             break
+        elif choice == "4":
+            prop_list = []
+            print("\nSelect a prop [Enter numbers separated by spaces to choose multiple]:")
+            print("1. Hat")
+            print("2. Heart Sunglasses")
+            selection = input("Enter choice: ").split(" ")
+            for num in selection:
+                if num == "1":
+                    prop_list.append(hat)
+                elif num == "2":
+                    prop_list.append(heart_sunglasses)
         else:
             print("Invalid choice. Try again.")
 
@@ -54,7 +73,7 @@ import threading
 menu_thread = threading.Thread(target=menu, daemon=True)
 menu_thread.start()
 
-while True:
+while program_run == True:
     # read frame
     ret, frame = cap.read()
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # convert to grayscale
@@ -78,42 +97,74 @@ while True:
             # calculate estimated real-world distance
             estimated_distance_cm = (KNOWN_REAL_DISTANCE * KNOWN_PIXEL_DISTANCE) / eye_distance_pixels
 
-            # calculate how much to scale the prop
-            sun_width = int(eye_distance_pixels * 2.2)
-            sun_height = int(heart_sunglasses.shape[0] * (sun_width / heart_sunglasses.shape[1]))
-
-            # resize prop
-            resized_sunglasses = cv2.resize(heart_sunglasses, (sun_width, sun_height), interpolation=cv2.INTER_AREA)
-
-            # calculate rotation angle
-            angle = np.degrees(np.arctan2(right_eye[1] - left_eye[1], right_eye[0] - left_eye[0]))
-            rotation_matrix = cv2.getRotationMatrix2D((sun_width // 2, sun_height // 2), -angle, 1)
-            rotated_sunglasses = cv2.warpAffine(resized_sunglasses, rotation_matrix, (sun_width, sun_height),
-                                                flags=cv2.INTER_AREA, borderMode=cv2.BORDER_CONSTANT,
-                                                borderValue=(0, 0, 0, 0))
-
             # find where to place the prop
             center_eye = ((left_eye[0] + right_eye[0]) // 2, (left_eye[1] + right_eye[1]) // 2)
-            top_left = (center_eye[0] - sun_width // 2, center_eye[1] - sun_height // 2)
 
-            x1, y1 = max(0, top_left[0]), max(0, top_left[1])
-            x2, y2 = min(frame.shape[1], top_left[0] + sun_width), min(frame.shape[0], top_left[1] + sun_height)
+            for prop in prop_list:
+                if prop.shape == hat.shape:
+                    left_forehead = shape[19]
+                    right_forehead = shape[24]
 
-            # overlay the prop
-            overlay_sunglasses = rotated_sunglasses[
-                max(0, -top_left[1]):min(sun_height, frame.shape[0] - top_left[1]),
-                max(0, -top_left[0]):min(sun_width, frame.shape[1] - top_left[0])
-            ]
+                    forehead_width = int(np.linalg.norm(np.array(left_forehead) - np.array(right_forehead)))
 
-            if overlay_sunglasses.shape[0] > 0 and overlay_sunglasses.shape[1] > 0:
-                overlay_image = frame[y1:y2, x1:x2]
-                alpha_s = overlay_sunglasses[:, :, 3] / 255.0
-                alpha_l = 1.0 - alpha_s
+                    hat_width = int(forehead_width * 3.3)
+                    hat_height = int(prop.shape[0] * (hat_width / prop.shape[1]))
+                    resized_hat = cv2.resize(prop, (hat_width, hat_height), interpolation=cv2.INTER_AREA)
 
-                for c in range(0, 3):
-                    overlay_image[:, :, c] = (alpha_s * overlay_sunglasses[:, :, c] + alpha_l * overlay_image[:, :, c])
+                    hat_center_x = (left_forehead[0] + right_forehead[0]) // 2
+                    hat_center_y = (left_forehead[1] + right_forehead[1]) // 2
 
-                frame[y1:y2, x1:x2] = overlay_image
+                    hat_y_offset = int(hat_height * 0.65)
+                    hat_top_left = (hat_center_x - hat_width // 2, hat_center_y - hat_y_offset)
+
+                    angle = np.degrees(np.arctan2(right_forehead[1] - left_forehead[1], right_forehead[0] - left_forehead[0]))
+
+                    x_offset_adjustment = int(np.sin(np.radians(angle)) * hat_width * 0.3)  # Multiplies by 0.3 to control offset range
+                    hat_top_left = (hat_top_left[0] + x_offset_adjustment, hat_top_left[1])
+
+                    rotation_matrix = cv2.getRotationMatrix2D((hat_width // 2, hat_height // 2), -angle, 1)
+                    rotated_hat = cv2.warpAffine(resized_hat, rotation_matrix, (hat_width, hat_height), flags=cv2.INTER_AREA, borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0, 0))
+
+                    hat_x1, hat_y1 = max(0, hat_top_left[0]), max(0, hat_top_left[1])
+                    hat_x2, hat_y2 = min(frame.shape[1], hat_x1 + hat_width), min(frame.shape[0], hat_y1 + hat_height)
+
+                    hat_region = frame[hat_y1:hat_y2, hat_x1:hat_x2]
+                    hat_alpha = rotated_hat[:, :, 3] / 255.0
+                    hat_rgb = rotated_hat[:, :, :3]
+
+                    for c in range(0, 3):
+                        hat_region[:, :, c] = (hat_alpha * hat_rgb[:, :, c] + (1.0 - hat_alpha) * hat_region[:, :, c])
+
+                elif prop.shape == heart_sunglasses.shape:
+                    left_eye = shape[36]
+                    right_eye = shape[45]
+                    eye_center = ((left_eye[0] + right_eye[0]) // 2, (left_eye[1] + right_eye[1]) // 2)
+
+                    eye_distance = np.linalg.norm(np.array(left_eye) - np.array(right_eye))
+
+                    glasses_width = int(eye_distance * 2.0)
+                    glasses_height = int(prop.shape[0] * (glasses_width / prop.shape[1]))
+                    resized_glasses = cv2.resize(prop, (glasses_width, glasses_height), interpolation=cv2.INTER_AREA)
+
+                    glasses_center_x = eye_center[0]
+                    glasses_center_y = eye_center[1]
+
+                    glasses_y_offset = int(glasses_height * 0.5)
+                    glasses_top_left = (glasses_center_x - glasses_width // 2, glasses_center_y - glasses_y_offset)
+
+                    angle = np.degrees(np.arctan2(right_eye[1] - left_eye[1], right_eye[0] - left_eye[0]))
+                    rotation_matrix = cv2.getRotationMatrix2D((glasses_width // 2, glasses_height // 2), -angle, 1)
+                    rotated_glasses = cv2.warpAffine(resized_glasses, rotation_matrix, (glasses_width, glasses_height), flags=cv2.INTER_AREA, borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0, 0))
+
+                    glasses_x1, glasses_y1 = max(0, glasses_top_left[0]), max(0, glasses_top_left[1])
+                    glasses_x2, glasses_y2 = min(frame.shape[1], glasses_x1 + glasses_width), min(frame.shape[0], glasses_y1 + glasses_height)
+
+                    glasses_region = frame[glasses_y1:glasses_y2, glasses_x1:glasses_x2]
+                    glasses_alpha = rotated_glasses[:, :, 3] / 255.0
+                    glasses_rgb = rotated_glasses[:, :, :3]
+                    
+                    for c in range(0, 3):
+                        glasses_region[:, :, c] = (glasses_alpha * glasses_rgb[:, :, c] + (1.0 - glasses_alpha) * glasses_region[:, :, c])
 
     #show the video
     cv2.imshow("Output", frame)
