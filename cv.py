@@ -24,6 +24,7 @@ cap = cv2.VideoCapture(1)
 # declare variables
 filter_active = False # filter active flag
 program_run = True # program run flag
+selection = "" # prop selection
 
 # menu function
 def menu():
@@ -42,7 +43,7 @@ def menu():
         
         # input validation/choices
         if choice == "1":
-            if selection == []:
+            if selection == "":
                 print("No prop selected.")
             else:
                 filter_active = True
@@ -125,15 +126,30 @@ while program_run == True:
                     rotation_matrix = cv2.getRotationMatrix2D((hat_width // 2, hat_height // 2), -angle, 1)
                     rotated_hat = cv2.warpAffine(resized_hat, rotation_matrix, (hat_width, hat_height), flags=cv2.INTER_AREA, borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0, 0))
 
-                    hat_x1, hat_y1 = max(0, hat_top_left[0]), max(0, hat_top_left[1])
-                    hat_x2, hat_y2 = min(frame.shape[1], hat_x1 + hat_width), min(frame.shape[0], hat_y1 + hat_height)
+                    # allow hat coords to be negative
+                    hat_x1, hat_y1 = hat_top_left[0], hat_top_left[1]
+                    hat_x2, hat_y2 = hat_x1 + hat_width, hat_y1 + hat_height
+
+                    # find visible region of hat
+                    hat_region_x1 = max(0, -hat_x1)
+                    hat_region_y1 = max(0, -hat_y1)
+                    hat_region_x2 = hat_width - max(0, hat_x2 - frame.shape[1])
+                    hat_region_y2 = hat_height - max(0, hat_y2 - frame.shape[0])
+
+                    # find visible region of frame
+                    frame_x1 = max(0, hat_x1)
+                    frame_y1 = max(0, hat_y1)
+                    frame_x2 = min(frame.shape[1], hat_x2)
+                    frame_y2 = min(frame.shape[0], hat_y2)
 
                     hat_region = frame[hat_y1:hat_y2, hat_x1:hat_x2]
-                    hat_alpha = rotated_hat[:, :, 3] / 255.0
-                    hat_rgb = rotated_hat[:, :, :3]
+                    hat_alpha = rotated_hat[hat_region_y1:hat_region_y2, hat_region_x1:hat_region_x2, 3] / 255.0
+                    hat_rgb = rotated_hat[hat_region_y1:hat_region_y2, hat_region_x1:hat_region_x2, :3]
+                    
+                    if hat_region.shape[:2] == hat_alpha.shape[:2]:
+                        for c in range(0, 3):  # Blend only the visible part
+                            hat_region[:, :, c] = (hat_alpha * hat_rgb[:, :, c] + (1.0 - hat_alpha) * hat_region[:, :, c])
 
-                    for c in range(0, 3):
-                        hat_region[:, :, c] = (hat_alpha * hat_rgb[:, :, c] + (1.0 - hat_alpha) * hat_region[:, :, c])
 
                 elif prop.shape == heart_sunglasses.shape:
                     left_eye = shape[36]
