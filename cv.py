@@ -12,11 +12,7 @@ predictor = dlib.shape_predictor(p)
 # declare props
 heart_sunglasses = cv2.imread("heart_sunglasses.png", cv2.IMREAD_UNCHANGED) # heart sunglasses prop
 hat = cv2.imread("hat1.png", cv2.IMREAD_UNCHANGED) # hat prop
-
-# some data from online (chatgpt)
-KNOWN_EYE_DISTANCE = 6.3  # average adult eye distance in cm
-KNOWN_PIXEL_DISTANCE = 120  # pixel distance where eye distance was measured
-KNOWN_REAL_DISTANCE = 50  # cm distance from camera to face
+zoom_bg = cv2.imread("zoom.jpeg") # zoom background
 
 # start video capture
 cap = cv2.VideoCapture(1)
@@ -24,12 +20,14 @@ cap = cv2.VideoCapture(1)
 # declare variables
 filter_active = False # filter active flag
 program_run = True # program run flag
+bg_active = False # background active flag
 selection = "" # prop selection
 
 # menu function
 def menu():
     global filter_active
     global program_run
+    global bg_active
     global selection
     global prop_list
 
@@ -39,6 +37,8 @@ def menu():
         print("2. Deactivate Filter")
         print("3. Exit")
         print("4. Select filter")
+        print("5. Activate Background")
+        print("6. Deactivate Background")
         choice = input("Enter choice: ")
         
         # input validation/choices
@@ -66,6 +66,12 @@ def menu():
                     prop_list.append(hat)
                 elif num == "2":
                     prop_list.append(heart_sunglasses)
+        elif choice == "5":
+            bg_active = True
+            print("Background activated.")
+        elif choice == "6":
+            bg_active = False
+            print("Background deactivated.")
         else:
             print("Invalid choice. Try again.")
 
@@ -79,6 +85,19 @@ while program_run == True:
     ret, frame = cap.read()
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # convert to grayscale
     faces = detector(gray, 0) # detect faces
+
+    if bg_active:
+        zoom_bg_resized = cv2.resize(zoom_bg, (frame.shape[1], frame.shape[0]))
+
+        mask = np.zeros_like(frame[:, :, 0])
+        for face in faces:
+            x, y, w, h = face.left(), face.top(), face.width(), face.height()
+            mask[y:y+h, x:x+w] = 255
+
+            mask = cv2.GaussianBlur(mask, (21, 21), 0)
+            alpha = mask.astype(float) / 255
+            for c in range(0, 3):
+                frame[:, :, c] = (1- alpha) * zoom_bg_resized[:, :, c] + alpha * frame[:, :, c]
 
     # start prop filter code if filter is activated
     if filter_active:
@@ -94,9 +113,6 @@ while program_run == True:
 
             # calculate eye distance in pixels
             eye_distance_pixels = np.linalg.norm(np.array(left_eye) - np.array(right_eye))
-
-            # calculate estimated real-world distance
-            estimated_distance_cm = (KNOWN_REAL_DISTANCE * KNOWN_PIXEL_DISTANCE) / eye_distance_pixels
 
             # find where to place the prop
             center_eye = ((left_eye[0] + right_eye[0]) // 2, (left_eye[1] + right_eye[1]) // 2)
