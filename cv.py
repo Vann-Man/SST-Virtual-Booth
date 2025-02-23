@@ -14,7 +14,7 @@ heart_sunglasses = cv2.imread("props/heart_sunglasses.png", cv2.IMREAD_UNCHANGED
 hat = cv2.imread("props/hat1.png", cv2.IMREAD_UNCHANGED) # hat prop
 
 # start video capture
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(1) # change to 0 if error is caused
 
 # declare variables
 filter_active = False # filter active flag
