@@ -1,4 +1,4 @@
-Sunglasses Thingamajig Setup Instructions
+Filter Setup Instructions
 =========================================
 
 This document provides instructions to set up a virtual environment and install the necessary dependencies for the Sunglasses Thingamajig project.
@@ -67,4 +67,4 @@ Once the application is running, you can interact with it using the terminal men
 
 
 ## Contact
-For questions or support, contact [ganguly_rishav@s2022.ssts.edu.sg],[pok_vann_xyn@s2022.ssts.edu.sg],[sim_jie_yi_kieren@s2022.ssts.edu.sg].
+For questions or support, contact ganguly_rishav@s2022.ssts.edu.sg,pok_vann_xyn@s2022.ssts.edu.sg,sim_jie_yi_kieren@s2022.ssts.edu.sg.
