@@ -21,7 +21,7 @@ filter_active = False # filter active flag
 program_run = True # program run flag
 bg_active = False # background active flag
 selection = "" # selection
-bg = "" # selected background
+bg = None # selected background
 
 # menu function
 def menu():
@@ -70,7 +70,7 @@ def menu():
                     print("Invalid choice. Returning to menu...")
                     selection = ""
         elif choice == "4":
-            if bg == "":
+            if bg is None or bg.size == 0:
                 print("No background selected.")
             else:
                 bg_active = True
@@ -90,6 +90,7 @@ def menu():
                 bg_active = True
                 bg = cv2.imread("backgrounds/SST.jpg")
             elif selection == "":
+                bg = None
                 print("No background selected.")
             else:
                 print("Invalid choice. Returning to menu...")
