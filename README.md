@@ -1,8 +1,6 @@
 Filter Setup Instructions
 =========================================
 
-This document provides instructions to set up a virtual environment and install the necessary dependencies for the Sunglasses Thingamajig project.
-
 1. Create a Virtual Environment
 -------------------------------
 Navigate to your project directory and run the following command to create a virtual environment:
