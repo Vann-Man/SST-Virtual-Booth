@@ -238,3 +238,6 @@ while program_run == True:
 # end program
 cap.release()
 cv2.destroyAllWindows()
+'''
+OpenAI. (2025). ChatGPT (Mar 14 version) [Large language model]. https://chat.openai.com/chat
+'''
