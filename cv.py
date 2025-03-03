@@ -84,10 +84,8 @@ def menu():
             print("2. SST")
             selection = input("Enter choice: ")
             if selection == "1":
-                bg_active = True
                 bg = cv2.imread("backgrounds/zoom.jpeg")
             elif selection == "2":
-                bg_active = True
                 bg = cv2.imread("backgrounds/SST.jpg")
             elif selection == "":
                 bg = None
